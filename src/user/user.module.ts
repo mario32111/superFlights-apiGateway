@@ -5,6 +5,6 @@ import { ProxyModule } from 'src/common/proxy/proxy.module';
 @Module({
   //hay que agregar el proxy moule par aque este modulo haga la conexion con RabbitMQ
   imports:[ProxyModule],
-  controllers: [UserController]
+  controllers: [UserController],
 })
 export class UserModule {}
