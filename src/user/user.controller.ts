@@ -5,7 +5,10 @@ import { Observable } from 'rxjs';
 import { IUser } from 'src/common/interface/user.interface';
 import { UserMsg } from 'src/common/constants';
 import { ClientProxy } from '@nestjs/microservices';
+import { ApiTags } from '@nestjs/swagger';
 
+
+@ApiTags('users')
 @Controller('api/v2/user')
 export class UserController {
     private _clientProxyUser: ClientProxy;
@@ -18,9 +21,10 @@ export class UserController {
     create(@Body() userDto: UserDto): Observable<IUser> {
         return this._clientProxyUser.send(UserMsg.CREATE, userDto);
     }
-
+    
     @Get()
     findAll(): Observable<IUser[]> {
+        console.log('Sending FIND_ALL request to microservice'); // Agrega un log para depurar
         return this._clientProxyUser.send(UserMsg.FIND_ALL, '');
     }
 
