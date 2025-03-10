@@ -16,28 +16,44 @@ export class PassengerController {
         this._clientProxyPassenger = this.clientProxy.clientProxyPassengers();
     }
 
+    private sendAndHandle<T>(pattern: string, data: any): Observable<T> {
+        return new Observable<T>((subscriber) => {
+            this._clientProxyPassenger.send<T>(pattern, data).subscribe({
+                next: (response) => {
+                    console.log('Response from microservice:', response);
+                    subscriber.next(response);
+                    subscriber.complete();
+                },
+                error: (err) => {
+                    console.error('Error from microservice:', err);
+                    subscriber.error(err);
+                },
+            });
+        });
+    }
+
     @Post()
     create(@Body() passengerDto: PassengerDto): Observable<IPassenger> {
-        return this._clientProxyPassenger.send(PassengerMsg.CREATE,passengerDto)
+        return this.sendAndHandle<IPassenger>(PassengerMsg.CREATE, passengerDto);
     }
 
     @Get()
     findAll(): Observable<IPassenger[]> {
-        return this._clientProxyPassenger.send(PassengerMsg.FIND_ALL, '');
+        return this.sendAndHandle<IPassenger[]>(PassengerMsg.FIND_ALL, '');
     }
 
     @Get(':id')
     findOne(@Param('id') id: string): Observable<IPassenger> {
-        return this._clientProxyPassenger.send(PassengerMsg.FIND_ONE, id);
+        return this.sendAndHandle<IPassenger>(PassengerMsg.FIND_ONE, id);
     }
 
     @Put(':id')
     update(@Param('id') id: string, @Body() passengerDto: PassengerDto): Observable<IPassenger> {
-        return this._clientProxyPassenger.send(PassengerMsg.UPDATE, { id, passengerDto });
+        return this.sendAndHandle<IPassenger>(PassengerMsg.UPDATE, { id, passengerDto });
     }
 
     @Delete(':id')
     delete(@Param('id') id: string): Observable<any> {
-        return this._clientProxyPassenger.send(PassengerMsg.DELETE, id);
+        return this.sendAndHandle<any>(PassengerMsg.DELETE, id);
     }
 }

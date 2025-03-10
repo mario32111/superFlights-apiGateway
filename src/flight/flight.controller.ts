@@ -3,9 +3,10 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ClientProxySuperFlights } from 'src/common/proxy/client-proxy';
 import { FlightDto } from './dto/flight.dto';
 import { FlightMsg, PassengerMsg } from 'src/common/constants';
-import { IUser } from 'src/common/interface/user.interface';
-import { Observable } from 'rxjs';
+import { IFlight } from 'src/common/interface/flight.interface'; // Importa IFlight
+import { Observable, from, lastValueFrom } from 'rxjs';
 import { ApiTags } from '@nestjs/swagger';
+import { IPassenger } from 'src/common/interface/passenger.interface';
 
 @ApiTags('flights')
 @Controller('api/v2/flight')
@@ -18,45 +19,62 @@ export class FlightController {
         this._clientProxyPassenger = this.clientProxy.clientProxyPassengers();
     }
 
-
+    private sendAndHandle<T>(pattern: string, data: any): Observable<T> {
+        return new Observable<T>((subscriber) => {
+            this._clientProxyFlight.send<T>(pattern, data).subscribe({
+                next: (response) => {
+                    console.log('Response from microservice:', response);
+                    subscriber.next(response);
+                    subscriber.complete();
+                },
+                error: (err) => {
+                    console.error('Error from microservice:', err);
+                    subscriber.error(err);
+                },
+            });
+        });
+    }
 
     @Post()
-    create(@Body() flighDto: FlightDto): Observable<IUser> {
-        return this._clientProxyFlight.send(FlightMsg.CREATE, flighDto);
+    create(@Body() flighDto: FlightDto): Observable<IFlight> {
+        return this.sendAndHandle<IFlight>(FlightMsg.CREATE, flighDto);
     }
 
     @Get()
-    findAll(): Observable<IUser[]> {
-        return this._clientProxyFlight.send(FlightMsg.FIND_ALL, '');
+    findAll(): Observable<IFlight[]> {
+        return this.sendAndHandle<IFlight[]>(FlightMsg.FIND_ALL, '');
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string): Observable<IUser> {
-        return this._clientProxyFlight.send(FlightMsg.FIND_ONE, id);
+    findOne(@Param('id') id: string): Observable<IFlight> {
+        return this.sendAndHandle<IFlight>(FlightMsg.FIND_ONE, id);
     }
 
     @Put(':id')
-    update(@Param('id') id: string, @Body() flighDto: FlightDto): Observable<IUser> {
-        return this._clientProxyFlight.send(FlightMsg.UPDATE, { id, flighDto });
+    update(@Param('id') id: string, @Body() flighDto: FlightDto): Observable<IFlight> {
+        return this.sendAndHandle<IFlight>(FlightMsg.UPDATE, { id, flighDto });
     }
 
     @Delete(':id')
     delete(@Param('id') id: string): Observable<any> {
-        return this._clientProxyFlight.send(FlightMsg.DELETE, id);
+        return this.sendAndHandle<any>(FlightMsg.DELETE, id);
     }
 
     @Post(':flightId/passenger/:passengerId')
     async addPassenger(
         @Param('flightId') flightId: string,
         @Param('passengerId') passengerId: string,
-    ){
-        const passenger= await this._clientProxyPassenger
-        .send(PassengerMsg.FIND_ONE,passengerId)
-        .toPromise();
+    ): Promise<Observable<IFlight>> {
+        try {
+            const passenger: IPassenger = await lastValueFrom(this._clientProxyPassenger.send<IPassenger>(PassengerMsg.FIND_ONE, passengerId));
 
-        if(!passenger) throw new HttpException('Passenger Not Found', HttpStatus.NOT_FOUND);
+            if (!passenger) {
+                throw new HttpException('Passenger Not Found', HttpStatus.NOT_FOUND);
+            }
 
-        return this._clientProxyFlight.send(FlightMsg.ADD_PASSENGER, {flightId, passengerId})
+            return this.sendAndHandle<IFlight>(FlightMsg.ADD_PASSENGER, { flightId, passengerId });
+        } catch (error) {
+            return from(Promise.reject(error)); // Convertir el error en un Observable
+        }
     }
-
 }
