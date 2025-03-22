@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { ClientProxySuperFlights } from 'src/common/proxy/client-proxy';
 import { UserDto } from './dto/user.dto';
 import { Observable } from 'rxjs';
@@ -6,8 +6,10 @@ import { IUser } from 'src/common/interface/user.interface';
 import { UserMsg } from 'src/common/constants';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.auth.guard';
 
 @ApiTags('users')
+@UseGuards(JwtAuthGuard)
 @Controller('api/v2/user')
 export class UserController {
     //Declara una propiedad privada para almacenar la instancia de ClientProxy, 

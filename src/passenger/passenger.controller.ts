@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
 import { IPassenger } from 'src/common/interface/passenger.interface';
@@ -6,8 +6,10 @@ import { ClientProxySuperFlights } from 'src/common/proxy/client-proxy';
 import { PassengerDto } from './dto/passenger.dto';
 import { PassengerMsg } from 'src/common/constants';
 import { ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.auth.guard';
 
 @ApiTags('passengers')
+@UseGuards(JwtAuthGuard)
 @Controller('api/v2/passenger')
 export class PassengerController {
     private _clientProxyPassenger: ClientProxy;

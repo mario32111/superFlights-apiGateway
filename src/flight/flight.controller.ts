@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ClientProxySuperFlights } from 'src/common/proxy/client-proxy';
 import { FlightDto } from './dto/flight.dto';
@@ -7,8 +7,11 @@ import { IFlight } from 'src/common/interface/flight.interface'; // Importa IFli
 import { Observable, from, lastValueFrom } from 'rxjs';
 import { ApiTags } from '@nestjs/swagger';
 import { IPassenger } from 'src/common/interface/passenger.interface';
+import { JwtAuthGuard } from 'src/auth/guards/jwt.auth.guard';
 
 @ApiTags('flights')
+//proteccion de endpoinds con jwt
+@UseGuards(JwtAuthGuard)
 @Controller('api/v2/flight')
 export class FlightController {
     private _clientProxyFlight: ClientProxy;
